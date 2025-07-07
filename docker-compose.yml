@@ -1,0 +1,84 @@
+services:
+  # Database Service
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: microservices
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - backend
+
+  # 🛠️ Products Microservice
+  products-service:
+    build: ./products-service
+    container_name: products_service
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/microservices
+      API_KEY: 4eb07053-1eb8-4cd0-969a-c163456ff4c1
+    ports:
+      - "3001:3000"
+    depends_on:
+      - db
+    networks:
+      - backend
+  ## 🧪 Pruebas Vitest + Testing library
+
+  ## 🔒 Seguridad:  Autenticación con API keys en headers, Validación de producto existente antes de actualizar inventario
+
+  # 📦 Inventory Microservice
+  inventory-service:
+    build: ./inventory-service
+    container_name: inventory_service
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/microservices
+      API_KEY: 4eb07053-1eb8-4cd0-969a-c163456ff4c1
+      PRODUCTS_URL: http://products-service:3000
+    ports:
+      - "3002:3000"
+    depends_on:
+      - db
+      - products-service
+    networks:
+      - backend
+
+# 🔗 Define a shared neservices:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: microservices
+    ports:
+      - "5432:5432"
+
+  products-service:
+    build: ./products-service
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/microservices
+      API_KEY: 4eb07053-1eb8-4cd0-969a-c163456ff4c1
+    ports:
+      - "3001:3000"
+    depends_on:
+      - db
+
+  inventory-service:
+    build: ./inventory-service
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/microservices
+      API_KEY: 4eb07053-1eb8-4cd0-969a-c163456ff4c1
+      PRODUCTS_URL: http://products-service:3000
+    ports:
+      - "3002:3000"
+    depends_on:
+      - db
+      - products-service
+twork for microservices
+networks:
+  backend:
